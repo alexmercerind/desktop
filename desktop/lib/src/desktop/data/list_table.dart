@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
@@ -431,6 +433,20 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
   @override
   void initState() {
     super.initState();
+    if (Platform.isWindows) {
+      controller.addListener(
+        () {
+          final scrollDirection = controller.position.userScrollDirection;
+          if (scrollDirection != ScrollDirection.idle) {
+            var scrollEnd = this.controller.offset +
+                (scrollDirection == ScrollDirection.reverse ? 40 : -40);
+            scrollEnd = min(controller.position.maxScrollExtent,
+                max(controller.position.minScrollExtent, scrollEnd));
+            controller.jumpTo(scrollEnd);
+          }
+        },
+      );
+    }
   }
 
   bool hasExtent = false;
