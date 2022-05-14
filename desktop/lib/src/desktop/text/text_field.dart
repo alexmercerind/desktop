@@ -76,6 +76,7 @@ class _TextFieldSelectionGestureDetectorBuilder
             case PointerDeviceKind.mouse:
             case PointerDeviceKind.stylus:
             case PointerDeviceKind.invertedStylus:
+            case PointerDeviceKind.trackpad:
               // Precise devices should place the cursor at a precise position.
               renderEditable.selectPosition(cause: SelectionChangedCause.tap);
               break;
