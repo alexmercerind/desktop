@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 
-import 'package:flutter/widgets.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/widgets.dart';
 
 const double _kMinInteractiveSize = 48.0;
 
@@ -391,6 +391,7 @@ class DesktopScrollbarPainter extends ChangeNotifier implements CustomPainter {
               center: _thumbRect!.center, radius: _kMinInteractiveSize / 2),
         );
         return touchScrollbarRect.contains(position);
+      case PointerDeviceKind.trackpad:
       case PointerDeviceKind.mouse:
       case PointerDeviceKind.stylus:
       case PointerDeviceKind.invertedStylus:
@@ -417,6 +418,7 @@ class DesktopScrollbarPainter extends ChangeNotifier implements CustomPainter {
               center: _thumbRect!.center, radius: _kMinInteractiveSize / 2),
         );
         return touchThumbRect.contains(position);
+      case PointerDeviceKind.trackpad:
       case PointerDeviceKind.mouse:
       case PointerDeviceKind.stylus:
       case PointerDeviceKind.invertedStylus:
