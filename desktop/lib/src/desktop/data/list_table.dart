@@ -6,7 +6,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 import '../component.dart';
-import '../theme/theme.dart';
+import '../theme/theme.dart' hide Theme;
 
 const _kHeaderHeight = 40.0;
 const _kMinColumnWidth = 40.0;
@@ -293,7 +293,7 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
 
               final right = dragging && colDragging == col
                   ? BorderSide(
-                      color: listTableThemeData.borderHighlightColor!,
+                      color: Theme.of(context).primaryColor,
                       width: dragBorderWidth,
                     )
                   : isRight
@@ -304,7 +304,7 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
               decoration = decoration.copyWith(border: border);
             } else if (dragging && colDragging == col) {
               final right = BorderSide(
-                color: listTableThemeData.borderHighlightColor!,
+                color: Theme.of(context).primaryColor,,
                 width: 2.0,
               );
 
@@ -737,7 +737,7 @@ class _TableColHandlerState extends State<_TableColHandler>
 
     if (border != null && border != BorderSide.none) {
       final Color borderColor = dragged
-          ? listTableTheme.borderHighlightColor!
+          ? Theme.of(context).primaryColor,
           : hovered
               ? listTableTheme.borderHoverColor!
               : widget.hasIndicator
@@ -752,7 +752,7 @@ class _TableColHandlerState extends State<_TableColHandler>
     } else {
       final width = expanded ? 2.0 : 1.0;
       final borderColor = dragged
-          ? listTableTheme.borderHighlightColor!
+          ? Theme.of(context).primaryColor,
           : hovered
               ? listTableTheme.borderHoverColor!
               : widget.hasIndicator
