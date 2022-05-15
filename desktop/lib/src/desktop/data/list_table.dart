@@ -304,7 +304,7 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
               decoration = decoration.copyWith(border: border);
             } else if (dragging && colDragging == col) {
               final right = BorderSide(
-                color: Theme.of(context).primaryColor,,
+                color: Theme.of(context).primaryColor,
                 width: 2.0,
               );
 
@@ -737,7 +737,7 @@ class _TableColHandlerState extends State<_TableColHandler>
 
     if (border != null && border != BorderSide.none) {
       final Color borderColor = dragged
-          ? Theme.of(context).primaryColor,
+          ? Theme.of(context).primaryColor
           : hovered
               ? listTableTheme.borderHoverColor!
               : widget.hasIndicator
@@ -752,7 +752,7 @@ class _TableColHandlerState extends State<_TableColHandler>
     } else {
       final width = expanded ? 2.0 : 1.0;
       final borderColor = dragged
-          ? Theme.of(context).primaryColor,
+          ? Theme.of(context).primaryColor
           : hovered
               ? listTableTheme.borderHoverColor!
               : widget.hasIndicator
