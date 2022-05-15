@@ -180,148 +180,165 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
       onEnter: (_) =>
           dragging ? null : setState(() => primaryHoveredIndex = index),
       onExit: (_) => dragging ? null : setState(() => primaryHoveredIndex = -1),
-      child: Listener(
-        behavior: HitTestBehavior.deferToChild,
-        onPointerDown: dragging
-            ? null
-            : widget.onPressed != null || widget.onSecondaryPress != null
-                ? (e) {
-                    shouldReactToPrimaryPress =
-                        e.kind == PointerDeviceKind.mouse &&
-                            e.buttons == kPrimaryMouseButton;
-                    if (shouldReactToPrimaryPress) {
-                      setState(() => primaryPressedIndex = index);
-                    } else {
-                      setState(() => secondaryPressedIndex = index);
-                    }
-                  }
-                : null,
-        onPointerUp: dragging
-            ? null
-            : widget.onPressed != null || widget.onSecondaryPress != null
-                ? (e) {
-                    final overlay =
-                        Overlay.of(context)!.context.findRenderObject();
-                    final position = RelativeRect.fromRect(
-                      Offset(e.position.dx, e.position.dy) & Size.zero,
-                      overlay!.semanticBounds,
-                    );
-                    if (shouldReactToPrimaryPress) {
-                      if (primaryWaitingIndex == index) {
-                        return;
-                      }
-                      primaryWaitingIndex = index;
-                      final dynamic result =
-                          widget.onPressed?.call(index, position)
-                              as dynamic; // TODO(as): fix dynamic
-                      if (result is Future) {
-                        setState(() => primaryWaitingIndex = index);
-                        result.then(
-                            (_) => setState(() => primaryWaitingIndex = -1));
-                      } else {
-                        primaryWaitingIndex = -1;
-                      }
-                      setState(() => primaryPressedIndex = -1);
-                    } else {
-                      if (secondaryWaitingIndex == index) {
-                        return;
-                      }
-                      secondaryWaitingIndex = index;
-                      final dynamic result =
-                          widget.onSecondaryPress?.call(index, position)
-                              as dynamic; // TODO(as): fix dynamic
-                      if (result is Future) {
-                        setState(() => secondaryWaitingIndex = index);
-                        result.then(
-                            (_) => setState(() => secondaryWaitingIndex = -1));
-                      } else {
-                        secondaryWaitingIndex = -1;
-                      }
-                      setState(() => secondaryPressedIndex = -1);
-                    }
-                  }
-                : null,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.max,
-          children: List.generate(colElems.length, (col) {
-            assert(col < colSizes.length);
+      child: Stack(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.max,
+            children: List.generate(colElems.length, (col) {
+              final ListTableThemeData listTableThemeData =
+                  ListTableTheme.of(context);
 
-            Widget result = LayoutBuilder(
-              builder: (context, constraints) => widget.tableRowBuilder(
-                context,
-                index,
-                col,
-                constraints,
-              ),
-            );
+              final Color? backgroundColor =
+                  primaryPressedIndex == index || primaryWaitingIndex == index
+                      ? listTableThemeData.highlightColor
+                      : primaryHoveredIndex == index
+                          ? listTableThemeData.hoverColor
+                          : null;
 
-            result = Align(alignment: Alignment.bottomLeft, child: result);
+              BoxDecoration decoration = BoxDecoration(color: backgroundColor);
 
-            final ListTableThemeData listTableThemeData =
-                ListTableTheme.of(context);
+              // TODO(as): ???
+              if (widget.tableBorder != null &&
+                  (widget.tableBorder!.horizontalInside != BorderSide.none ||
+                      widget.tableBorder!.verticalInside != BorderSide.none)) {
+                final isBottom = index < widget.itemCount - 1 || hasExtent;
+                final isRight = col < widget.colCount - 1 && col < lastNonZero;
 
-            final Color? backgroundColor =
-                primaryPressedIndex == index || primaryWaitingIndex == index
-                    ? listTableThemeData.highlightColor
-                    : primaryHoveredIndex == index
-                        ? listTableThemeData.hoverColor
-                        : null;
+                final horizontalInside = widget.tableBorder!.horizontalInside;
+                final verticalInside = widget.tableBorder!.verticalInside;
 
-            BoxDecoration decoration = BoxDecoration(color: backgroundColor);
+                final bottom = isBottom ? horizontalInside : BorderSide.none;
 
-            // TODO(as): ???
-            if (widget.tableBorder != null &&
-                (widget.tableBorder!.horizontalInside != BorderSide.none ||
-                    widget.tableBorder!.verticalInside != BorderSide.none)) {
-              final isBottom = index < widget.itemCount - 1 || hasExtent;
-              final isRight = col < widget.colCount - 1 && col < lastNonZero;
+                // TODO(as): Put this shit somewhere else.
+                final headerColumnBorder = widget.headerColumnBorder ??
+                    widget.tableBorder?.verticalInside;
+                final dragBorderWidth = headerColumnBorder != null &&
+                        headerColumnBorder != BorderSide.none
+                    ? headerColumnBorder.width +
+                        (headerColumnBorder.width / 2.0).roundToDouble()
+                    : 2.0;
 
-              final horizontalInside = widget.tableBorder!.horizontalInside;
-              final verticalInside = widget.tableBorder!.verticalInside;
+                final right = dragging && colDragging == col
+                    ? BorderSide(
+                        color: Theme.of(context).primaryColor,
+                        width: dragBorderWidth,
+                      )
+                    : isRight
+                        ? verticalInside
+                        : BorderSide.none;
 
-              final bottom = isBottom ? horizontalInside : BorderSide.none;
+                final border = Border(bottom: bottom, right: right);
+                decoration = decoration.copyWith(border: border);
+              } else if (dragging && colDragging == col) {
+                final right = BorderSide(
+                  color: Theme.of(context).primaryColor,
+                  width: 2.0,
+                );
 
-              // TODO(as): Put this shit somewhere else.
-              final headerColumnBorder = widget.headerColumnBorder ??
-                  widget.tableBorder?.verticalInside;
-              final dragBorderWidth = headerColumnBorder != null &&
-                      headerColumnBorder != BorderSide.none
-                  ? headerColumnBorder.width +
-                      (headerColumnBorder.width / 2.0).roundToDouble()
-                  : 2.0;
-
-              final right = dragging && colDragging == col
-                  ? BorderSide(
-                      color: Theme.of(context).primaryColor,
-                      width: dragBorderWidth,
-                    )
-                  : isRight
-                      ? verticalInside
-                      : BorderSide.none;
-
-              final border = Border(bottom: bottom, right: right);
-              decoration = decoration.copyWith(border: border);
-            } else if (dragging && colDragging == col) {
-              final right = BorderSide(
-                color: Theme.of(context).primaryColor,
-                width: 2.0,
+                final border = Border(right: right);
+                decoration = decoration.copyWith(border: border);
+              }
+              return Container(
+                constraints: BoxConstraints.tightFor(
+                  width: colSizes[col],
+                ),
+                decoration: decoration,
               );
-
-              final border = Border(right: right);
-              decoration = decoration.copyWith(border: border);
-            }
-
-            return Container(
-              constraints: BoxConstraints.tightFor(
-                width: colSizes[col],
+            }).toList(),
+          ),
+          Positioned.fill(
+            child: Listener(
+              behavior: HitTestBehavior.translucent,
+              onPointerDown: dragging
+                  ? null
+                  : widget.onPressed != null || widget.onSecondaryPress != null
+                      ? (e) {
+                          shouldReactToPrimaryPress =
+                              e.kind == PointerDeviceKind.mouse &&
+                                  e.buttons == kPrimaryMouseButton;
+                          if (shouldReactToPrimaryPress) {
+                            setState(() => primaryPressedIndex = index);
+                          } else {
+                            setState(() => secondaryPressedIndex = index);
+                          }
+                        }
+                      : null,
+              onPointerUp: dragging
+                  ? null
+                  : widget.onPressed != null || widget.onSecondaryPress != null
+                      ? (e) {
+                          final overlay =
+                              Overlay.of(context)!.context.findRenderObject();
+                          final position = RelativeRect.fromRect(
+                            Offset(e.position.dx, e.position.dy) & Size.zero,
+                            overlay!.semanticBounds,
+                          );
+                          if (shouldReactToPrimaryPress) {
+                            if (primaryWaitingIndex == index) {
+                              return;
+                            }
+                            primaryWaitingIndex = index;
+                            final dynamic result =
+                                widget.onPressed?.call(index, position)
+                                    as dynamic; // TODO(as): fix dynamic
+                            if (result is Future) {
+                              setState(() => primaryWaitingIndex = index);
+                              result.then((_) =>
+                                  setState(() => primaryWaitingIndex = -1));
+                            } else {
+                              primaryWaitingIndex = -1;
+                            }
+                            setState(() => primaryPressedIndex = -1);
+                          } else {
+                            if (secondaryWaitingIndex == index) {
+                              return;
+                            }
+                            secondaryWaitingIndex = index;
+                            final dynamic result =
+                                widget.onSecondaryPress?.call(index, position)
+                                    as dynamic; // TODO(as): fix dynamic
+                            if (result is Future) {
+                              setState(() => secondaryWaitingIndex = index);
+                              result.then((_) =>
+                                  setState(() => secondaryWaitingIndex = -1));
+                            } else {
+                              secondaryWaitingIndex = -1;
+                            }
+                            setState(() => secondaryPressedIndex = -1);
+                          }
+                        }
+                      : null,
+              child: Container(
+                width: MediaQuery.of(context).size.width,
+                height: 34.0,
               ),
-              decoration: decoration,
-              child: result,
-            );
-          }).toList(),
-        ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.max,
+            children: List.generate(colElems.length, (col) {
+              Widget result = LayoutBuilder(
+                builder: (context, constraints) => widget.tableRowBuilder(
+                  context,
+                  index,
+                  col,
+                  constraints,
+                ),
+              );
+              result = Align(alignment: Alignment.bottomLeft, child: result);
+              return Container(
+                constraints: BoxConstraints.tightFor(
+                  width: colSizes[col],
+                ),
+                child: result,
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
