@@ -180,13 +180,82 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
       onEnter: (_) =>
           dragging ? null : setState(() => primaryHoveredIndex = index),
       onExit: (_) => dragging ? null : setState(() => primaryHoveredIndex = -1),
-      child: Stack(
-        children: [
-          Row(
+      // [Listener] only reads & handles secondary clicks.
+      // [GestureDetector] handles the primary clicks.
+      child: Listener(
+        behavior: HitTestBehavior.deferToChild,
+        onPointerDown: dragging
+            ? null
+            : widget.onSecondaryPress != null
+                ? (e) {
+                    shouldReactToPrimaryPress =
+                        e.kind == PointerDeviceKind.mouse &&
+                            e.buttons == kPrimaryMouseButton;
+                    if (!shouldReactToPrimaryPress) {
+                      setState(() => secondaryPressedIndex = index);
+                    }
+                  }
+                : null,
+        onPointerUp: dragging
+            ? null
+            : widget.onSecondaryPress != null
+                ? (e) {
+                    final overlay =
+                        Overlay.of(context)!.context.findRenderObject();
+                    final position = RelativeRect.fromRect(
+                      Offset(e.position.dx, e.position.dy) & Size.zero,
+                      overlay!.semanticBounds,
+                    );
+                    if (!shouldReactToPrimaryPress) {
+                      if (secondaryWaitingIndex == index) {
+                        return;
+                      }
+                      secondaryWaitingIndex = index;
+                      final dynamic result =
+                          widget.onSecondaryPress?.call(index, position)
+                              as dynamic; // TODO(as): fix dynamic
+                      if (result is Future) {
+                        setState(() => secondaryWaitingIndex = index);
+                        result.then(
+                            (_) => setState(() => secondaryWaitingIndex = -1));
+                      } else {
+                        secondaryWaitingIndex = -1;
+                      }
+                      setState(() => secondaryPressedIndex = -1);
+                    }
+                  }
+                : null,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: dragging
+              ? null
+              : widget.onPressed != null
+                  ? () {
+                      setState(() => primaryPressedIndex = index);
+                      widget.onPressed?.call(primaryPressedIndex,
+                          RelativeRect.fromLTRB(0, 0, 0, 0));
+                      Future.delayed(const Duration(milliseconds: 100), () {
+                        setState(() => primaryPressedIndex = -1);
+                      });
+                    }
+                  : null,
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.max,
             children: List.generate(colElems.length, (col) {
+              assert(col < colSizes.length);
+              Widget result = LayoutBuilder(
+                builder: (context, constraints) => widget.tableRowBuilder(
+                  context,
+                  index,
+                  col,
+                  constraints,
+                ),
+              );
+
+              result = Align(alignment: Alignment.bottomLeft, child: result);
+
               final ListTableThemeData listTableThemeData =
                   ListTableTheme.of(context);
 
@@ -240,105 +309,17 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
                 final border = Border(right: right);
                 decoration = decoration.copyWith(border: border);
               }
+
               return Container(
                 constraints: BoxConstraints.tightFor(
                   width: colSizes[col],
                 ),
                 decoration: decoration,
-              );
-            }).toList(),
-          ),
-          Positioned.fill(
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: dragging
-                  ? null
-                  : widget.onPressed != null || widget.onSecondaryPress != null
-                      ? (e) {
-                          shouldReactToPrimaryPress =
-                              e.kind == PointerDeviceKind.mouse &&
-                                  e.buttons == kPrimaryMouseButton;
-                          if (shouldReactToPrimaryPress) {
-                            setState(() => primaryPressedIndex = index);
-                          } else {
-                            setState(() => secondaryPressedIndex = index);
-                          }
-                        }
-                      : null,
-              onPointerUp: dragging
-                  ? null
-                  : widget.onPressed != null || widget.onSecondaryPress != null
-                      ? (e) {
-                          final overlay =
-                              Overlay.of(context)!.context.findRenderObject();
-                          final position = RelativeRect.fromRect(
-                            Offset(e.position.dx, e.position.dy) & Size.zero,
-                            overlay!.semanticBounds,
-                          );
-                          if (shouldReactToPrimaryPress) {
-                            if (primaryWaitingIndex == index) {
-                              return;
-                            }
-                            primaryWaitingIndex = index;
-                            final dynamic result =
-                                widget.onPressed?.call(index, position)
-                                    as dynamic; // TODO(as): fix dynamic
-                            if (result is Future) {
-                              setState(() => primaryWaitingIndex = index);
-                              result.then((_) =>
-                                  setState(() => primaryWaitingIndex = -1));
-                            } else {
-                              primaryWaitingIndex = -1;
-                            }
-                            setState(() => primaryPressedIndex = -1);
-                          } else {
-                            if (secondaryWaitingIndex == index) {
-                              return;
-                            }
-                            secondaryWaitingIndex = index;
-                            final dynamic result =
-                                widget.onSecondaryPress?.call(index, position)
-                                    as dynamic; // TODO(as): fix dynamic
-                            if (result is Future) {
-                              setState(() => secondaryWaitingIndex = index);
-                              result.then((_) =>
-                                  setState(() => secondaryWaitingIndex = -1));
-                            } else {
-                              secondaryWaitingIndex = -1;
-                            }
-                            setState(() => secondaryPressedIndex = -1);
-                          }
-                        }
-                      : null,
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                height: 34.0,
-              ),
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.max,
-            children: List.generate(colElems.length, (col) {
-              Widget result = LayoutBuilder(
-                builder: (context, constraints) => widget.tableRowBuilder(
-                  context,
-                  index,
-                  col,
-                  constraints,
-                ),
-              );
-              result = Align(alignment: Alignment.bottomLeft, child: result);
-              return Container(
-                constraints: BoxConstraints.tightFor(
-                  width: colSizes[col],
-                ),
                 child: result,
               );
             }).toList(),
           ),
-        ],
+        ),
       ),
     );
   }
