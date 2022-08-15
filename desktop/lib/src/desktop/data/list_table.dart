@@ -765,7 +765,7 @@ class _TableColHandlerState extends State<_TableColHandler>
       behavior: HitTestBehavior.translucent,
       child: MouseRegion(
         opaque: false,
-        cursor: SystemMouseCursors.click,
+        cursor: SystemMouseCursors.resizeLeftRight,
         onEnter: _handleMouseEnter,
         onExit: _handleMouseExit,
         child: Container(
