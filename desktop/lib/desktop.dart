@@ -13,5 +13,4 @@ export 'src/desktop/input/input.dart';
 export 'src/desktop/navigation/navigation.dart';
 export 'src/desktop/scrolling/scrolling.dart';
 export 'src/desktop/status/status.dart';
-export 'src/desktop/text/text.dart';
 export 'src/desktop/theme/theme.dart';
