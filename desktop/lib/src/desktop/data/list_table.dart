@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 import '../component.dart';
 import '../theme/theme.dart' hide Theme;
 
-const _kHeaderHeight = 40.0;
+const _kHeaderHeight = 32.0;
 const _kMinColumnWidth = 40.0;
 const _kHandlerWidth = 8.0;
 //const _kDefaultItemExtent = 40.0;
@@ -279,20 +279,10 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
                 final verticalInside = widget.tableBorder!.verticalInside;
 
                 final bottom = isBottom ? horizontalInside : BorderSide.none;
-
-                // TODO(as): Put this shit somewhere else.
-                final headerColumnBorder = widget.headerColumnBorder ??
-                    widget.tableBorder?.verticalInside;
-                final dragBorderWidth = headerColumnBorder != null &&
-                        headerColumnBorder != BorderSide.none
-                    ? headerColumnBorder.width +
-                        (headerColumnBorder.width / 2.0).roundToDouble()
-                    : 2.0;
-
                 final right = dragging && colDragging == col
                     ? BorderSide(
                         color: Theme.of(context).primaryColor,
-                        width: dragBorderWidth,
+                        width: 1.0,
                       )
                     : isRight
                         ? verticalInside
@@ -303,7 +293,7 @@ class _ListTableState extends State<ListTable> implements _TableDragUpdate {
               } else if (dragging && colDragging == col) {
                 final right = BorderSide(
                   color: Theme.of(context).primaryColor,
-                  width: 2.0,
+                  width: 1.0,
                 );
 
                 final border = Border(right: right);
@@ -738,26 +728,24 @@ class _TableColHandlerState extends State<_TableColHandler>
       final Color borderColor = dragged
           ? Theme.of(context).primaryColor
           : hovered
-              ? listTableTheme.borderHoverColor!
+              ? Theme.of(context).primaryColor
               : widget.hasIndicator
                   ? listTableTheme.borderIndicatorColor!
                   : border.color;
 
       border = border.copyWith(
-          color: borderColor,
-          width: expanded
-              ? border.width + (border.width / 2.0).roundToDouble()
-              : border.width);
+        color: borderColor,
+        width: 1.0,
+      );
     } else {
-      final width = expanded ? 2.0 : 1.0;
       final borderColor = dragged
           ? Theme.of(context).primaryColor
           : hovered
-              ? listTableTheme.borderHoverColor!
+              ? Theme.of(context).primaryColor
               : widget.hasIndicator
                   ? listTableTheme.borderIndicatorColor!
                   : listTableTheme.borderColor!;
-      border = BorderSide(width: width, color: borderColor);
+      border = BorderSide(width: 1.0, color: borderColor);
     }
 
     return RawGestureDetector(
@@ -769,7 +757,7 @@ class _TableColHandlerState extends State<_TableColHandler>
         onEnter: _handleMouseEnter,
         onExit: _handleMouseExit,
         child: Container(
-          margin: const EdgeInsets.only(left: _kHandlerWidth),
+          width: _kHandlerWidth,
           decoration: BoxDecoration(border: Border(right: border)),
         ),
       ),
